@@ -1,33 +1,58 @@
+import { ShieldAlert, ShieldCheck, AlertTriangle } from "lucide-react";
+
 export default function RiskCard({ riskLevel, isFake, recommendation }) {
   const config = {
-    low:    { bg: "bg-green-900/30",  border: "border-green-700", text: "text-green-400",  icon: "✅", label: "Low Risk"    },
-    medium: { bg: "bg-yellow-900/30", border: "border-yellow-700",text: "text-yellow-400", icon: "⚠️", label: "Medium Risk"  },
-    high:   { bg: "bg-red-900/30",    border: "border-red-700",   text: "text-red-400",    icon: "🚨", label: "High Risk"    },
+    low: {
+      border: "border-emerald-500/25",
+      bg: "bg-emerald-500/5",
+      text: "text-success",
+      icon: ShieldCheck,
+      label: "Low Risk",
+    },
+    medium: {
+      border: "border-amber-500/25",
+      bg: "bg-amber-500/5",
+      text: "text-warning",
+      icon: AlertTriangle,
+      label: "Medium Risk",
+    },
+    high: {
+      border: "border-red-500/25",
+      bg: "bg-red-500/5",
+      text: "text-danger",
+      icon: ShieldAlert,
+      label: "High Risk",
+    },
   };
 
-  const c = config[riskLevel] || config["medium"];
+  const c = config[riskLevel] || config.medium;
+  const Icon = c.icon;
 
   return (
-    <div className={`rounded-xl border ${c.border} ${c.bg} p-5 flex flex-col gap-3`}>
-      
-      {/* Header */}
+    <div className={`rounded-card border ${c.border} ${c.bg} p-6 flex flex-col gap-4 h-full`}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">{c.icon}</span>
+        <div className="flex items-center gap-3">
+          <div className={`h-10 w-10 rounded-xl border ${c.border} flex items-center justify-center`}>
+            <Icon className={`h-5 w-5 ${c.text}`} strokeWidth={2} />
+          </div>
           <span className={`font-bold text-lg ${c.text}`}>{c.label}</span>
         </div>
-        <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${c.border} ${c.text}`}>
-          {isFake ? "FAKE" : "LEGITIMATE"}
+        <span
+          className={`text-[11px] font-semibold px-2.5 py-1 rounded-md border uppercase tracking-wide ${
+            isFake
+              ? "text-danger bg-red-500/10 border-red-500/25"
+              : "text-success bg-emerald-500/10 border-emerald-500/25"
+          }`}
+        >
+          {isFake ? "Fake" : "Legitimate"}
         </span>
       </div>
 
-      {/* Divider */}
-      <div className="border-t border-gray-700" />
-
-      {/* Recommendation */}
-      <div>
-        <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Recommendation</p>
-        <p className="text-gray-200 text-sm">{recommendation}</p>
+      <div className="border-t border-surface-border pt-4">
+        <p className="text-slate-500 text-[11px] uppercase tracking-wider font-medium mb-2">
+          Recommendation
+        </p>
+        <p className="text-slate-200 text-[15px] leading-relaxed">{recommendation}</p>
       </div>
     </div>
   );

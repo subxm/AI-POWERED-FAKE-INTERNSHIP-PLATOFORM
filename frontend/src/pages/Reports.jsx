@@ -1,12 +1,29 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Search, Trash2, Plus } from "lucide-react";
 import { getReports, deleteReport } from "../api/api";
+import LoadingScreen from "../components/LoadingScreen";
+import PageHeader from "../components/PageHeader";
+import EmptyReportsIllustration from "../components/illustrations/EmptyReportsIllustration";
+
+const riskStyles = {
+  low: "text-success bg-emerald-500/10 border-emerald-500/25",
+  medium: "text-warning bg-amber-500/10 border-amber-500/25",
+  high: "text-danger bg-red-500/10 border-red-500/25",
+};
+
+function scoreColor(score) {
+  if (score >= 70) return "bg-success";
+  if (score >= 40) return "bg-warning";
+  return "bg-danger";
+}
 
 export default function Reports() {
-  const [reports, setReports]   = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(null);
-  const [search, setSearch]     = useState("");
-  const [filter, setFilter]     = useState("all");
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
     fetchReports();
@@ -36,164 +53,159 @@ export default function Reports() {
   };
 
   const filtered = reports.filter((r) => {
-    const matchSearch = r.posting_title
-      .toLowerCase()
-      .includes(search.toLowerCase());
+    const matchSearch = r.posting_title.toLowerCase().includes(search.toLowerCase());
     const matchFilter =
-      filter === "all"
-        ? true
-        : filter === "fake"
-        ? r.is_fake
-        : !r.is_fake;
+      filter === "all" ? true : filter === "fake" ? r.is_fake : !r.is_fake;
     return matchSearch && matchFilter;
   });
 
-  const riskColor = {
-    low:    "text-green-400  bg-green-900/20  border-green-800",
-    medium: "text-yellow-400 bg-yellow-900/20 border-yellow-800",
-    high:   "text-red-400    bg-red-900/20    border-red-800",
-  };
+  const filterLabels = { all: "All", fake: "Fake", safe: "Safe" };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-blue-400 text-lg animate-pulse">Loading reports...</div>
-      </div>
-    );
+    return <LoadingScreen message="Loading your reports..." />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 px-6 py-10">
-      <div className="max-w-5xl mx-auto">
+    <div className="page-container animate-fade-in">
+      <PageHeader
+        title="Reports"
+        subtitle="All your saved internship analyses in one searchable place."
+        action={
+          <Link to="/analyze" className="btn-primary">
+            <Plus className="h-4 w-4" />
+            New Analysis
+          </Link>
+        }
+      />
 
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Your Reports 📋</h1>
-          <p className="text-gray-500 text-sm">
-            All your saved internship analyses in one place.
-          </p>
-        </div>
-
-        {/* Search + Filter */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search by title..."
+            placeholder="Search by job title..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3
-              text-white placeholder-gray-600 focus:outline-none focus:border-blue-500
-              transition text-sm"
+            className="input-field !pl-11"
           />
-          <div className="flex bg-gray-900 border border-gray-800 rounded-lg p-1 gap-1">
-            {["all", "fake", "safe"].map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize transition
-                  ${filter === f
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-400 hover:text-white"}`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
         </div>
+        <div className="flex bg-navy-50 border border-surface-border rounded-xl p-1 gap-1">
+          {["all", "fake", "safe"].map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFilter(f)}
+              className={`px-4 py-2.5 rounded-lg text-sm font-medium capitalize transition-all duration-150 ${
+                filter === f ? "tab-active" : "tab-inactive"
+              }`}
+            >
+              {filterLabels[f]}
+            </button>
+          ))}
+        </div>
+      </div>
 
-        {/* Empty State */}
-        {filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <span className="text-5xl">📭</span>
-            <p className="text-gray-500">
+      {filtered.length === 0 ? (
+        <div className="card flex flex-col items-center justify-center py-20 lg:py-24 gap-5">
+          <EmptyReportsIllustration className="w-48 h-auto opacity-90" />
+          <div className="text-center max-w-sm">
+            <p className="text-white font-medium text-[15px]">
               {search || filter !== "all"
-                ? "No reports match your search."
-                : "No reports saved yet."}
+                ? "No reports match your filters"
+                : "No reports saved yet"}
+            </p>
+            <p className="text-slate-500 text-[14px] mt-2 leading-relaxed">
+              {search || filter !== "all"
+                ? "Try adjusting your search or filter criteria."
+                : "Run an analysis and save the report to see it here."}
             </p>
           </div>
-        )}
-
-        {/* Reports List */}
+          {!search && filter === "all" && (
+            <Link to="/analyze" className="btn-primary mt-2">
+              <Plus className="h-4 w-4" />
+              Start your first analysis
+            </Link>
+          )}
+        </div>
+      ) : (
         <div className="flex flex-col gap-4">
           {filtered.map((r) => (
-            <div
-              key={r.id}
-              className="bg-gray-900 border border-gray-800 rounded-xl p-6
-                hover:border-gray-600 transition"
-            >
-              {/* Top Row */}
-              <div className="flex items-start justify-between gap-4 mb-4">
+            <article key={r.id} className="card-interactive p-6 lg:p-7">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
                 <div>
-                  <h3 className="text-white font-semibold text-lg">{r.posting_title}</h3>
+                  <h3 className="text-white font-semibold text-lg tracking-tight">
+                    {r.posting_title}
+                  </h3>
                   {r.company_name && (
-                    <p className="text-gray-500 text-sm mt-0.5">{r.company_name}</p>
+                    <p className="text-slate-500 text-[14px] mt-1">{r.company_name}</p>
                   )}
-                  <p className="text-gray-600 text-xs mt-1">
+                  <p className="text-slate-600 text-[13px] mt-2">
                     {new Date(r.created_at).toLocaleDateString("en-IN", {
-                      day: "numeric", month: "long", year: "numeric",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
                     })}
                   </p>
                 </div>
 
-                {/* Badges */}
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className={`text-xs font-semibold px-3 py-1 rounded-full border
-                    ${riskColor[r.risk_level] || riskColor["medium"]}`}>
-                    {r.risk_level?.toUpperCase()}
+                  <span
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-md border uppercase tracking-wide ${
+                      riskStyles[r.risk_level] || riskStyles.medium
+                    }`}
+                  >
+                    {r.risk_level}
                   </span>
-                  <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${
-                    r.is_fake
-                      ? "text-red-400 bg-red-900/20 border-red-800"
-                      : "text-green-400 bg-green-900/20 border-green-800"
-                  }`}>
-                    {r.is_fake ? "FAKE" : "LEGIT"}
+                  <span
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-md border uppercase tracking-wide ${
+                      r.is_fake
+                        ? "text-danger bg-red-500/10 border-red-500/25"
+                        : "text-success bg-emerald-500/10 border-emerald-500/25"
+                    }`}
+                  >
+                    {r.is_fake ? "Fake" : "Safe"}
                   </span>
                 </div>
               </div>
 
-              {/* Trust Score Bar */}
-              <div className="mb-4">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>Trust Score</span>
-                  <span className={`font-semibold ${
-                    r.trust_score >= 70
-                      ? "text-green-400"
-                      : r.trust_score >= 40
-                      ? "text-yellow-400"
-                      : "text-red-400"
-                  }`}>
+              <div className="mb-5">
+                <div className="flex justify-between text-[13px] mb-2">
+                  <span className="text-slate-500">Trust score</span>
+                  <span
+                    className={`font-semibold tabular-nums ${
+                      r.trust_score >= 70
+                        ? "text-success"
+                        : r.trust_score >= 40
+                        ? "text-warning"
+                        : "text-danger"
+                    }`}
+                  >
                     {r.trust_score}/100
                   </span>
                 </div>
-                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-navy-100 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full ${
-                      r.trust_score >= 70
-                        ? "bg-green-500"
-                        : r.trust_score >= 40
-                        ? "bg-yellow-500"
-                        : "bg-red-500"
-                    }`}
+                    className={`h-full rounded-full transition-all duration-500 ${scoreColor(r.trust_score)}`}
                     style={{ width: `${r.trust_score}%` }}
                   />
                 </div>
               </div>
 
-              {/* Delete Button */}
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-2 border-t border-surface-border">
                 <button
+                  type="button"
                   onClick={() => handleDelete(r.id)}
                   disabled={deleting === r.id}
-                  className="text-xs text-gray-600 hover:text-red-400 transition
-                    disabled:opacity-50 flex items-center gap-1"
+                  className="inline-flex items-center gap-1.5 text-[13px] text-slate-600 hover:text-danger transition-colors disabled:opacity-50"
                 >
-                  {deleting === r.id ? "Deleting..." : "🗑️ Delete"}
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {deleting === r.id ? "Deleting..." : "Delete report"}
                 </button>
               </div>
-            </div>
+            </article>
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }
