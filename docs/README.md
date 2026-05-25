@@ -6,7 +6,7 @@ Fake Internship Detector is an AI-powered full-stack web application that analyz
 Frontend — React (Vite), Tailwind CSS v3, Axios, React Router
 Backend — FastAPI (Python), Motor (async MongoDB), JWT Auth
 ML — Scikit-learn, NLTK, Imbalanced-learn, Scipy
-AI — Google Gemini 1.5 Flash
+AI — Google Gemini 2.5 Flash
 Database — MongoDB Atlas
 
 
