@@ -1,94 +1,132 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  Search,
+  FileText,
+  LogOut,
+} from "lucide-react";
+import Logo from "./Logo";
+import { useAuthModal } from "../context/AuthModalContext";
+
+const navLinkClass = (active) =>
+  `text-sm font-medium transition-colors duration-150 ${
+    active ? "text-white" : "text-slate-400 hover:text-slate-200"
+  }`;
 
 export default function Navbar() {
-  const navigate  = useNavigate();
-  const token     = localStorage.getItem("token");
-  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const token = localStorage.getItem("token");
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { openAuth } = useAuthModal();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/");
+    setMobileOpen(false);
   };
 
-  return (
-    <nav className="bg-gray-900 border-b border-gray-800 px-6 py-4">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <span className="text-2xl">🛡️</span>
-          <span className="text-white font-bold text-lg">
-            Internship<span className="text-blue-500">Guard</span>
-          </span>
-        </Link>
+  const isActive = (path) => location.pathname === path;
 
-        {/* Desktop Links */}
-        <div className="hidden md:flex items-center gap-6">
-          <Link to="/"          className="text-gray-400 hover:text-white transition">Home</Link>
-          {token && (
+  const appLinks = [
+    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/analyze", label: "Analyze", icon: Search },
+    { to: "/reports", label: "Reports", icon: FileText },
+  ];
+
+  return (
+    <header className="sticky top-0 z-40 border-b border-surface-border/80 bg-navy/95 backdrop-blur-sm">
+      <nav className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <Logo />
+
+        <div className="hidden md:flex items-center gap-8">
+          {!token ? (
             <>
-              <Link to="/analyze"   className="text-gray-400 hover:text-white transition">Analyze</Link>
-              <Link to="/reports"   className="text-gray-400 hover:text-white transition">Reports</Link>
-              <Link to="/dashboard" className="text-gray-400 hover:text-white transition">Dashboard</Link>
+              <a href="#features" className={navLinkClass(false)}>
+                Features
+              </a>
+              <a href="#how-it-works" className={navLinkClass(false)}>
+                How it works
+              </a>
             </>
+          ) : (
+            appLinks.map(({ to, label }) => (
+              <Link key={to} to={to} className={navLinkClass(isActive(to))}>
+                {label}
+              </Link>
+            ))
           )}
         </div>
 
-        {/* Auth Buttons */}
         <div className="hidden md:flex items-center gap-3">
           {token ? (
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
-            >
+            <button type="button" onClick={handleLogout} className="btn-secondary !py-2">
+              <LogOut className="h-4 w-4" />
               Logout
             </button>
           ) : (
             <>
-              <Link
-                to="/"
-                className="text-gray-400 hover:text-white text-sm transition"
-              >
+              <button type="button" onClick={() => openAuth("login")} className="btn-ghost">
                 Login
-              </Link>
-              <Link
-                to="/"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
-              >
+              </button>
+              <button type="button" onClick={() => openAuth("register")} className="btn-primary">
                 Get Started
-              </Link>
+              </button>
             </>
           )}
         </div>
 
-        {/* Mobile Menu Button */}
         <button
-          className="md:hidden text-gray-400 hover:text-white"
-          onClick={() => setOpen(!open)}
+          type="button"
+          className="md:hidden btn-ghost !p-2"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Toggle menu"
         >
-          {open ? "✕" : "☰"}
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
-      </div>
+      </nav>
 
-      {/* Mobile Menu */}
-      {open && (
-        <div className="md:hidden mt-4 flex flex-col gap-4 px-2">
-          <Link to="/"          className="text-gray-400 hover:text-white" onClick={() => setOpen(false)}>Home</Link>
-          {token && (
+      {mobileOpen && (
+        <div className="md:hidden border-t border-surface-border bg-navy-50 px-6 py-4 flex flex-col gap-1 animate-fade-in">
+          {!token ? (
             <>
-              <Link to="/analyze"   className="text-gray-400 hover:text-white" onClick={() => setOpen(false)}>Analyze</Link>
-              <Link to="/reports"   className="text-gray-400 hover:text-white" onClick={() => setOpen(false)}>Reports</Link>
-              <Link to="/dashboard" className="text-gray-400 hover:text-white" onClick={() => setOpen(false)}>Dashboard</Link>
+              <a href="#features" className="btn-ghost justify-start" onClick={() => setMobileOpen(false)}>
+                Features
+              </a>
+              <a href="#how-it-works" className="btn-ghost justify-start" onClick={() => setMobileOpen(false)}>
+                How it works
+              </a>
+              <button type="button" className="btn-ghost justify-start" onClick={() => { openAuth("login"); setMobileOpen(false); }}>
+                Login
+              </button>
+              <button type="button" className="btn-primary w-full mt-2" onClick={() => { openAuth("register"); setMobileOpen(false); }}>
+                Get Started
+              </button>
             </>
-          )}
-          {token ? (
-            <button onClick={handleLogout} className="text-red-400 text-left">Logout</button>
           ) : (
-            <Link to="/" className="text-blue-400" onClick={() => setOpen(false)}>Login / Register</Link>
+            <>
+              {appLinks.map(({ to, label, icon: Icon }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="btn-ghost justify-start gap-3"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </Link>
+              ))}
+              <button type="button" className="btn-ghost justify-start text-danger mt-2" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
+            </>
           )}
         </div>
       )}
-    </nav>
+    </header>
   );
 }

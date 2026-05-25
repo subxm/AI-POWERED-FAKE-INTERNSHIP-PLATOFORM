@@ -1,10 +1,34 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import {
+  BarChart3,
+  AlertTriangle,
+  ShieldCheck,
+  Gauge,
+  Plus,
+  ChevronRight,
+} from "lucide-react";
 import { getMe, getReports } from "../api/api";
+import LoadingScreen from "../components/LoadingScreen";
+import PageHeader from "../components/PageHeader";
+import StatCard from "../components/StatCard";
+import EmptyAnalysisIllustration from "../components/illustrations/EmptyAnalysisIllustration";
+
+const riskStyles = {
+  low: "text-success bg-emerald-500/10 border-emerald-500/25",
+  medium: "text-warning bg-amber-500/10 border-amber-500/25",
+  high: "text-danger bg-red-500/10 border-red-500/25",
+};
+
+function scoreColor(score) {
+  if (score >= 70) return "text-success";
+  if (score >= 40) return "text-warning";
+  return "text-danger";
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [user, setUser]       = useState(null);
+  const [user, setUser] = useState(null);
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -14,155 +38,131 @@ export default function Dashboard() {
         const [userRes, reportsRes] = await Promise.all([getMe(), getReports()]);
         setUser(userRes.data);
         setReports(reportsRes.data);
-      } catch (err) {
+      } catch {
         localStorage.removeItem("token");
-        navigate("/");
+        navigate("/?auth=login", { replace: true });
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [navigate]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-blue-400 text-lg animate-pulse">Loading dashboard...</div>
-      </div>
-    );
+    return <LoadingScreen message="Loading your dashboard..." />;
   }
 
-  // --- Stats ---
-  const total      = reports.length;
-  const fakeCount  = reports.filter((r) => r.is_fake).length;
-  const safeCount  = total - fakeCount;
-  const avgScore   = total
+  const total = reports.length;
+  const fakeCount = reports.filter((r) => r.is_fake).length;
+  const safeCount = total - fakeCount;
+  const avgScore = total
     ? Math.round(reports.reduce((sum, r) => sum + r.trust_score, 0) / total)
     : 0;
 
-  const stats = [
-    { label: "Total Analyzed",  value: total,      icon: "📊", color: "text-blue-400"   },
-    { label: "Fake Detected",   value: fakeCount,  icon: "🚨", color: "text-red-400"    },
-    { label: "Safe Postings",   value: safeCount,  icon: "✅", color: "text-green-400"  },
-    { label: "Avg Trust Score", value: avgScore,   icon: "🛡️", color: "text-yellow-400" },
-  ];
-
-  const riskColor = {
-    low:    "text-green-400  bg-green-900/20  border-green-800",
-    medium: "text-yellow-400 bg-yellow-900/20 border-yellow-800",
-    high:   "text-red-400    bg-red-900/20    border-red-800",
-  };
+  const firstName = user?.name?.split(" ")[0] || "there";
 
   return (
-    <div className="min-h-screen bg-gray-950 px-6 py-10">
-      <div className="max-w-6xl mx-auto">
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-10">
-          <div>
-            <h1 className="text-3xl font-bold text-white">
-              Welcome back, <span className="text-blue-500">{user?.name}</span> 👋
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">{user?.email}</p>
-          </div>
-          <Link
-            to="/analyze"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5
-              rounded-lg text-sm font-semibold transition"
-          >
-            + New Analysis
+    <div className="page-container animate-fade-in">
+      <PageHeader
+        title={
+          <>
+            Welcome back,{" "}
+            <span className="text-accent">{user?.name || firstName}</span>
+          </>
+        }
+        subtitle={user?.email}
+        action={
+          <Link to="/analyze" className="btn-primary">
+            <Plus className="h-4 w-4" />
+            New Analysis
           </Link>
-        </div>
+        }
+      />
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-          {stats.map((s, i) => (
-            <div
-              key={i}
-              className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-2"
-            >
-              <span className="text-2xl">{s.icon}</span>
-              <span className={`text-3xl font-bold ${s.color}`}>{s.value}</span>
-              <span className="text-gray-500 text-sm">{s.label}</span>
-            </div>
-          ))}
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 lg:mb-10">
+        <StatCard label="Total Analyzed" value={total} icon={BarChart3} accent="accent" />
+        <StatCard label="Fake Detected" value={fakeCount} icon={AlertTriangle} accent="danger" />
+        <StatCard label="Safe Postings" value={safeCount} icon={ShieldCheck} accent="success" />
+        <StatCard label="Avg Trust Score" value={avgScore} icon={Gauge} accent="warning" />
+      </div>
 
-        {/* Recent Reports */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-white font-bold text-lg">Recent Analyses</h2>
-            <Link to="/reports" className="text-blue-400 text-sm hover:underline">
-              View all →
-            </Link>
+      <div className="card p-6 lg:p-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Recent Analyses</h2>
+            <p className="text-slate-500 text-[13px] mt-1">Your latest saved posting reviews</p>
           </div>
-
-          {reports.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <span className="text-5xl">🔍</span>
-              <p className="text-gray-500">No analyses yet.</p>
-              <Link
-                to="/analyze"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2
-                  rounded-lg text-sm font-semibold transition"
-              >
-                Analyze your first posting
-              </Link>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {reports.slice(0, 5).map((r, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between bg-gray-800/50
-                    border border-gray-700 rounded-lg px-5 py-4"
-                >
-                  {/* Title */}
-                  <div className="flex flex-col gap-1">
-                    <p className="text-white text-sm font-medium">{r.posting_title}</p>
-                    <p className="text-gray-500 text-xs">
-                      {new Date(r.created_at).toLocaleDateString("en-IN", {
-                        day: "numeric", month: "short", year: "numeric"
-                      })}
-                    </p>
-                  </div>
-
-                  {/* Right side */}
-                  <div className="flex items-center gap-4">
-                    {/* Trust Score */}
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">Trust Score</p>
-                      <p className={`font-bold text-sm ${
-                        r.trust_score >= 70
-                          ? "text-green-400"
-                          : r.trust_score >= 40
-                          ? "text-yellow-400"
-                          : "text-red-400"
-                      }`}>
-                        {r.trust_score}/100
-                      </p>
-                    </div>
-
-                    {/* Risk Badge */}
-                    <span className={`text-xs font-semibold px-3 py-1 rounded-full border
-                      ${riskColor[r.risk_level] || riskColor["medium"]}`}>
-                      {r.risk_level?.toUpperCase()}
-                    </span>
-
-                    {/* Fake/Legit Badge */}
-                    <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${
-                      r.is_fake
-                        ? "text-red-400 bg-red-900/20 border-red-800"
-                        : "text-green-400 bg-green-900/20 border-green-800"
-                    }`}>
-                      {r.is_fake ? "FAKE" : "LEGIT"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+          {reports.length > 0 && (
+            <Link
+              to="/reports"
+              className="inline-flex items-center gap-1 text-accent text-sm font-medium hover:text-accent-hover transition-colors"
+            >
+              View all
+              <ChevronRight className="h-4 w-4" />
+            </Link>
           )}
         </div>
+
+        {reports.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 lg:py-20 gap-5">
+            <EmptyAnalysisIllustration className="w-48 h-auto opacity-90" />
+            <div className="text-center max-w-sm">
+              <p className="text-white font-medium text-[15px]">No analyses yet</p>
+              <p className="text-slate-500 text-[14px] mt-2 leading-relaxed">
+                Paste an internship posting or upload a file to get your first AI-powered verdict.
+              </p>
+            </div>
+            <Link to="/analyze" className="btn-primary mt-2">
+              <Plus className="h-4 w-4" />
+              Analyze your first posting
+            </Link>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {reports.slice(0, 5).map((r) => (
+              <div
+                key={r.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-surface-border bg-navy-50/50 px-5 py-4 transition-colors hover:border-slate-600/50"
+              >
+                <div>
+                  <p className="text-white text-[15px] font-medium">{r.posting_title}</p>
+                  <p className="text-slate-500 text-[13px] mt-0.5">
+                    {new Date(r.created_at).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="text-right">
+                    <p className="text-[11px] uppercase tracking-wider text-slate-600">Trust</p>
+                    <p className={`font-semibold text-sm tabular-nums ${scoreColor(r.trust_score)}`}>
+                      {r.trust_score}/100
+                    </p>
+                  </div>
+                  <span
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-md border uppercase tracking-wide ${
+                      riskStyles[r.risk_level] || riskStyles.medium
+                    }`}
+                  >
+                    {r.risk_level}
+                  </span>
+                  <span
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-md border uppercase tracking-wide ${
+                      r.is_fake
+                        ? "text-danger bg-red-500/10 border-red-500/25"
+                        : "text-success bg-emerald-500/10 border-emerald-500/25"
+                    }`}
+                  >
+                    {r.is_fake ? "Fake" : "Safe"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

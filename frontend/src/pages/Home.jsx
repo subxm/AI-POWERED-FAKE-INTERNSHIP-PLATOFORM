@@ -1,182 +1,195 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { loginUser, registerUser } from "../api/api";
+import { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Brain,
+  Sparkles,
+  Flag,
+  BarChart3,
+  ArrowRight,
+  ShieldCheck,
+  ScanSearch,
+  FileCheck2,
+} from "lucide-react";
+import HeroIllustration from "../components/illustrations/HeroIllustration";
+import { useAuthModal } from "../context/AuthModalContext";
+
+const features = [
+  {
+    icon: Brain,
+    title: "ML-trained detection",
+    text: "Model trained on 17,000+ real job postings for accurate fraud signals.",
+  },
+  {
+    icon: Sparkles,
+    title: "Gemini explanations",
+    text: "Every verdict explained in plain English — no black-box scores.",
+  },
+  {
+    icon: Flag,
+    title: "30+ red flag patterns",
+    text: "Instant detection of suspicious language, fees, and scam patterns.",
+  },
+  {
+    icon: BarChart3,
+    title: "Trust score breakdown",
+    text: "0–100 trust score with detailed risk level and recommendations.",
+  },
+];
+
+const steps = [
+  { icon: ScanSearch, step: "01", title: "Paste or upload", desc: "Enter posting details manually or upload PDF, DOCX, or TXT." },
+  { icon: ShieldCheck, step: "02", title: "AI analyzes", desc: "ML model and Gemini evaluate fraud signals in seconds." },
+  { icon: FileCheck2, step: "03", title: "Get your verdict", desc: "Trust score, red flags, and a clear recommendation to apply or avoid." },
+];
 
 export default function Home() {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin]   = useState(true);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState("");
-  const [form, setForm]         = useState({ name: "", email: "", password: "" });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { openAuth } = useAuthModal();
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setError("");
-  };
-
-  const handleSubmit = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      let res;
-      if (isLogin) {
-        // FastAPI OAuth2 expects form data not JSON for login
-        const formData = new URLSearchParams();
-        formData.append("username", form.email);
-        formData.append("password", form.password);
-        res = await loginUser(formData);
-      } else {
-        res = await registerUser({
-          name:     form.name,
-          email:    form.email,
-          password: form.password,
-        });
-      }
-      localStorage.setItem("token", res.data.access_token);
-      navigate("/dashboard");
-    } catch (err) {
-      setError(err.response?.data?.detail || "Something went wrong. Try again.");
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (localStorage.getItem("token")) {
+      navigate("/dashboard", { replace: true });
+      return;
     }
-  };
+    const auth = searchParams.get("auth");
+    if (auth === "login" || auth === "register") {
+      openAuth(auth);
+      setSearchParams({}, { replace: true });
+    }
+  }, [navigate, searchParams, setSearchParams, openAuth]);
 
   return (
-    <div className="min-h-screen bg-gray-950 flex">
+    <div className="animate-fade-in">
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(59,130,246,0.08),transparent)]" />
+        <div className="page-container relative">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center py-12 lg:py-20">
+            <div className="max-w-xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-navy-50 px-3 py-1.5 mb-6">
+                <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                <span className="text-[13px] font-medium text-slate-400">
+                  AI-powered internship fraud detection
+                </span>
+              </div>
 
-      {/* Left — Hero */}
-      <div className="hidden lg:flex flex-col justify-center px-16 w-1/2 bg-gradient-to-br from-gray-900 to-gray-950 border-r border-gray-800">
-        <div className="max-w-lg">
-          <div className="flex items-center gap-3 mb-8">
-            <span className="text-5xl">🛡️</span>
-            <span className="text-white font-bold text-3xl">
-              Internship<span className="text-blue-500">Guard</span>
-            </span>
+              <h1 className="text-display-md lg:text-[2.75rem] lg:leading-[1.15] font-bold text-white tracking-tight">
+                Detect Fake Internships{" "}
+                <span className="text-accent">Before They Detect You</span>
+              </h1>
+
+              <p className="text-slate-400 text-[16px] leading-relaxed mt-6">
+                InternshipGuard analyzes postings for fraud signals, red flags, and scam
+                patterns — giving students and job seekers a clear, trustworthy verdict in seconds.
+              </p>
+
+              <div className="flex flex-wrap gap-3 mt-8">
+                <button
+                  type="button"
+                  onClick={() => openAuth("register")}
+                  className="btn-primary py-3 px-6"
+                >
+                  Get Started
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openAuth("login")}
+                  className="btn-secondary py-3 px-6"
+                >
+                  Login
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-6 mt-10 pt-8 border-t border-surface-border">
+                {[
+                  { value: "17k+", label: "Postings trained" },
+                  { value: "30+", label: "Red flag patterns" },
+                  { value: "<5s", label: "Avg. analysis time" },
+                ].map((s) => (
+                  <div key={s.label}>
+                    <p className="text-xl font-bold text-white tabular-nums">{s.value}</p>
+                    <p className="text-slate-500 text-[13px] mt-0.5">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative flex justify-center lg:justify-end">
+              <HeroIllustration className="w-full max-w-[480px] h-auto" />
+            </div>
           </div>
-          <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-            Detect Fake Internships <span className="text-blue-500">Before They Detect You</span>
-          </h1>
-          <p className="text-gray-400 text-lg mb-8">
-            AI-powered platform that analyzes internship postings for fraud signals,
-            red flags, and scam patterns in seconds.
-          </p>
+        </div>
+      </section>
 
-          {/* Feature Pills */}
-          <div className="flex flex-col gap-3">
-            {[
-              { icon: "🤖", text: "ML model trained on 17,000+ real job postings" },
-              { icon: "✨", text: "Gemini AI explains every verdict in plain English" },
-              { icon: "🚩", text: "Detects 30+ red flag patterns instantly"          },
-              { icon: "📊", text: "Trust score from 0–100 with detailed breakdown"   },
-            ].map((f, i) => (
-              <div key={i} className="flex items-center gap-3 bg-gray-800/50 rounded-lg px-4 py-3">
-                <span className="text-xl">{f.icon}</span>
-                <span className="text-gray-300 text-sm">{f.text}</span>
+      {/* Features */}
+      <section id="features" className="border-t border-surface-border bg-navy-50/50">
+        <div className="page-container py-16 lg:py-20">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">
+              Built for trust and clarity
+            </h2>
+            <p className="text-slate-500 text-[15px] mt-3">
+              Enterprise-grade analysis tools designed for students, career centers, and recruiters.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {features.map(({ icon: Icon, title, text }) => (
+              <div key={title} className="card-interactive p-6">
+                <div className="h-10 w-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-4">
+                  <Icon className="h-5 w-5 text-accent" strokeWidth={2} />
+                </div>
+                <h3 className="text-white font-semibold text-[15px] mb-2">{title}</h3>
+                <p className="text-slate-500 text-[14px] leading-relaxed">{text}</p>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Right — Auth Form */}
-      <div className="flex flex-col justify-center items-center w-full lg:w-1/2 px-6">
-        <div className="w-full max-w-md">
-
-          {/* Toggle */}
-          <div className="flex bg-gray-900 rounded-xl p-1 mb-8 border border-gray-800">
-            <button
-              onClick={() => { setIsLogin(true); setError(""); }}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition
-                ${isLogin ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"}`}
-            >
-              Login
-            </button>
-            <button
-              onClick={() => { setIsLogin(false); setError(""); }}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition
-                ${!isLogin ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"}`}
-            >
-              Register
-            </button>
+      {/* How it works */}
+      <section id="how-it-works" className="border-t border-surface-border">
+        <div className="page-container py-16 lg:py-20">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">
+              How it works
+            </h2>
+            <p className="text-slate-500 text-[15px] mt-3">
+              Three steps from suspicious posting to actionable insight.
+            </p>
           </div>
 
-          <h2 className="text-2xl font-bold text-white mb-2">
-            {isLogin ? "Welcome back" : "Create your account"}
-          </h2>
-          <p className="text-gray-500 text-sm mb-6">
-            {isLogin
-              ? "Login to access your internship analyzer"
-              : "Sign up to start detecting fake internships"}
-          </p>
-
-          {/* Form Fields */}
-          <div className="flex flex-col gap-4">
-            {!isLogin && (
-              <div>
-                <label className="text-gray-400 text-sm mb-1 block">Full Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  placeholder="John Doe"
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3
-                    text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition"
-                />
+          <div className="grid md:grid-cols-3 gap-6">
+            {steps.map(({ icon: Icon, step, title, desc }) => (
+              <div key={step} className="card p-8 relative">
+                <span className="text-[13px] font-mono font-semibold text-accent/60">{step}</span>
+                <div className="h-11 w-11 rounded-xl bg-navy-100 border border-surface-border flex items-center justify-center mt-4 mb-5">
+                  <Icon className="h-5 w-5 text-slate-300" strokeWidth={2} />
+                </div>
+                <h3 className="text-white font-semibold text-lg mb-2">{title}</h3>
+                <p className="text-slate-500 text-[14px] leading-relaxed">{desc}</p>
               </div>
-            )}
-
-            <div>
-              <label className="text-gray-400 text-sm mb-1 block">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="you@example.com"
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3
-                  text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition"
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-400 text-sm mb-1 block">Password</label>
-              <input
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3
-                  text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition"
-              />
-            </div>
-
-            {/* Error */}
-            {error && (
-              <div className="bg-red-900/30 border border-red-700 rounded-lg px-4 py-3">
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
-            )}
-
-            {/* Submit */}
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900
-                text-white font-semibold py-3 rounded-lg transition mt-2"
-            >
-              {loading
-                ? (isLogin ? "Logging in..." : "Creating account...")
-                : (isLogin ? "Login"         : "Create Account")}
-            </button>
+            ))}
           </div>
 
-          <p className="text-gray-600 text-xs text-center mt-6">
-            By continuing you agree to our Terms of Service and Privacy Policy.
-          </p>
+          <div className="text-center mt-12">
+            <button type="button" onClick={() => openAuth("register")} className="btn-primary py-3 px-8">
+              Start analyzing for free
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-surface-border py-8">
+        <div className="page-container flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] text-slate-600">
+          <p>© {new Date().getFullYear()} InternshipGuard. All rights reserved.</p>
+          <p>Protecting students from fraudulent internship postings.</p>
+        </div>
+      </footer>
     </div>
   );
 }
